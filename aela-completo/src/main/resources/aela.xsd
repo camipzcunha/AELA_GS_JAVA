@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    AELA — Contrato SOAP (XSD)
+    ══════════════════════════════════════════════════════════════════
+    Este arquivo define o schema XML do Web Service SOAP do AELA.
+    O Spring-WS gera o WSDL automaticamente a partir deste XSD.
+
+    Operações expostas:
+      1. consultarReadiness  → consulta o ReadinessScore de um operador
+      2. registrarAlerta     → cadastra um alerta fisiológico crítico
+
+    WSDL disponível em: http://localhost:8080/ws/aela.wsdl
+    ══════════════════════════════════════════════════════════════════
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://aela.com.br/soap"
+           targetNamespace="http://aela.com.br/soap"
+           elementFormDefault="qualified">
+
+    <!-- ══════════════════════════════════════════════════════════
+         OPERAÇÃO 1: consultarReadiness
+         Consulta o ReadinessScore atual de um operador para uma
+         tarefa específica. Operação de leitura (somente consulta).
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- REQUEST -->
+    <xs:element name="consultarReadinessRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <!-- ID do operador cadastrado na API REST -->
+                <xs:element name="operadorId" type="xs:long"/>
+                <!--
+                    Tipo de tarefa para calcular os pesos corretos.
+                    Valores válidos: EVA | OPERACAO_COGNITIVA | TAREFA_FISICA
+                                     PILOTAGEM | MONITORAMENTO | RESGATE
+                -->
+                <xs:element name="tipoTarefa" type="xs:string"/>
+                <!-- Token de autenticação do sistema solicitante -->
+                <xs:element name="token" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- RESPONSE -->
+    <xs:element name="consultarReadinessResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="operadorId"   type="xs:long"/>
+                <xs:element name="operadorNome" type="xs:string"/>
+                <xs:element name="tipoTarefa"   type="xs:string"/>
+                <!-- Score de 0 a 100 -->
+                <xs:element name="scoreGeral"   type="xs:double"/>
+                <!-- Desvios por sistema fisiológico (%) -->
+                <xs:element name="desvioCardiovascular" type="xs:double"/>
+                <xs:element name="desvioSensoriomotor"  type="xs:double"/>
+                <xs:element name="desvioOcular"         type="xs:double"/>
+                <xs:element name="desvioCognitivo"      type="xs:double"/>
+                <xs:element name="desvioRecuperacao"    type="xs:double"/>
+                <!-- APTO | MONITORAMENTO | RESTRIÇÃO | INAPTO -->
+                <xs:element name="classificacao"  type="xs:string"/>
+                <xs:element name="recomendacao"   type="xs:string"/>
+                <xs:element name="dataCalculo"    type="xs:string"/>
+                <!-- Código de retorno: 200=OK, 404=não encontrado, 422=sem baseline/leitura -->
+                <xs:element name="codigoRetorno"  type="xs:int"/>
+                <xs:element name="mensagemRetorno" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ══════════════════════════════════════════════════════════
+         OPERAÇÃO 2: registrarAlerta
+         Registra um alerta fisiológico crítico gerado por sistema
+         externo (wearable, satélite, outro módulo AELA).
+         Operação de escrita (processamento/cadastro).
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- REQUEST -->
+    <xs:element name="registrarAlertaRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="operadorId"   type="xs:long"/>
+                <xs:element name="missaoId"     type="xs:long"   minOccurs="0"/>
+                <!--
+                    Tipo do alerta:
+                    CARDIOVASCULAR | OCULAR | COGNITIVO | SONO | SATURACAO_O2 | GERAL
+                -->
+                <xs:element name="tipoAlerta"   type="xs:string"/>
+                <!--
+                    Severidade:
+                    BAIXA | MEDIA | ALTA | CRITICA
+                -->
+                <xs:element name="severidade"   type="xs:string"/>
+                <!-- Descrição livre do alerta -->
+                <xs:element name="descricao"    type="xs:string"/>
+                <!-- Valor da métrica que disparou o alerta -->
+                <xs:element name="valorMetrica" type="xs:double" minOccurs="0"/>
+                <!-- Valor do baseline para comparação -->
+                <xs:element name="valorBaseline" type="xs:double" minOccurs="0"/>
+                <!-- Origem do alerta: WEARABLE | SATELLITE | MANUAL | SISTEMA_AELA -->
+                <xs:element name="origem"       type="xs:string" minOccurs="0"/>
+                <xs:element name="token"        type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- RESPONSE -->
+    <xs:element name="registrarAlertaResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <!-- ID do alerta registrado no banco -->
+                <xs:element name="alertaId"      type="xs:long"/>
+                <xs:element name="operadorNome"  type="xs:string"/>
+                <xs:element name="tipoAlerta"    type="xs:string"/>
+                <xs:element name="severidade"    type="xs:string"/>
+                <xs:element name="dataRegistro"  type="xs:string"/>
+                <!-- true = alerta registrado com sucesso -->
+                <xs:element name="sucesso"       type="xs:boolean"/>
+                <xs:element name="codigoRetorno" type="xs:int"/>
+                <xs:element name="mensagem"      type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
